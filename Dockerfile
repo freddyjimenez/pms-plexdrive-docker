@@ -1,9 +1,26 @@
-FROM plexinc/pms-docker:beta
+FROM golang:1.16.4-stretch AS build
+FROM plexinc/pms-docker AS base
 
-LABEL maintainer="rapejim"
+# LABEL maintainer="rapejim"
 
 ARG ARCH='amd64'
 ARG PLEXDRIVE_VERSION='5.1.0'
+
+FROM build AS buildplexdrive
+ARG TARGETARCH
+ARG DEBIAN_FRONTEND="noninteractive"
+
+
+WORKDIR /tmp/plexdrive
+RUN git clone https://github.com/meisyn/plexdrive.git .
+RUN GO111MODULE=on go install
+RUN go build
+
+
+FROM base
+
+COPY --from=buildplexdrive /tmp/plexdrive /usr/local/bin/
+RUN chown -c root:root /usr/local/bin/plexdrive
 
 ENTRYPOINT ["/init"]
 
